@@ -105,7 +105,7 @@ func (c *otlpConnection) buildPayload(spans []trace.Span) Map {
 	if service == "" {
 		service = c.instance.Name
 	}
-	fieldMap := trace.ResolveFields(c.instance.Setting, otlpDefaultFields())
+	fieldMap := trace.ResolveFields(c.instance.Config.Fields, otlpDefaultFields())
 	otlpSpans := make([]Any, 0, len(spans))
 	for _, span := range spans {
 		values := trace.SpanValues(span, c.instance.Name, c.instance.Config.Flag)
