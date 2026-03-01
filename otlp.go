@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bamgoo/bamgoo"
-	. "github.com/bamgoo/base"
-	"github.com/bamgoo/trace"
+	"github.com/infrago/infra"
+	. "github.com/infrago/base"
+	"github.com/infrago/trace"
 )
 
 type (
@@ -32,7 +32,7 @@ type (
 )
 
 func init() {
-	bamgoo.Register("otlp", &otlpDriver{})
+	infra.Register("otlp", &otlpDriver{})
 }
 
 func (d *otlpDriver) Connect(inst *trace.Instance) (trace.Connection, error) {
@@ -166,7 +166,7 @@ func (c *otlpConnection) buildPayload(spans []trace.Span) Map {
 				},
 				"scopeSpans": []Any{
 					Map{
-						"scope": Map{"name": "bamgoo.trace"},
+						"scope": Map{"name": "infra.trace"},
 						"spans": otlpSpans,
 					},
 				},
@@ -177,10 +177,10 @@ func (c *otlpConnection) buildPayload(spans []trace.Span) Map {
 
 func otlpDefaultFields() map[string]string {
 	return map[string]string{
-		"entry":   "bamgoo.entry",
-		"project": "bamgoo.project",
-		"profile": "bamgoo.profile",
-		"node":    "bamgoo.node",
+		"entry":   "infra.entry",
+		"project": "infra.project",
+		"profile": "infra.profile",
+		"node":    "infra.node",
 	}
 }
 
