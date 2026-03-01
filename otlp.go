@@ -117,6 +117,9 @@ func (c *otlpConnection) buildPayload(spans []trace.Span) Map {
 			kv("service.name", serviceName),
 		}
 		for k, v := range span.Attributes {
+			if isInternalTraceAttr(k) {
+				continue
+			}
 			attrs = append(attrs, kv(k, v))
 		}
 		for source, target := range fieldMap {
@@ -127,25 +130,16 @@ func (c *otlpConnection) buildPayload(spans []trace.Span) Map {
 				attrs = append(attrs, kv(target, val))
 			}
 		}
-		statusCode := span.StatusCode
-		if statusCode == "" {
-			statusCode = "STATUS_CODE_OK"
-			if span.Status == trace.StatusError {
-				statusCode = "STATUS_CODE_ERROR"
-			}
+		statusCode := "STATUS_CODE_OK"
+		if span.Code != 0 || (span.Status != "" && span.Status != trace.StatusOK) {
+			statusCode = "STATUS_CODE_ERROR"
 		}
 		status := Map{"code": statusCode}
-		if span.StatusMessage != "" {
-			status["message"] = span.StatusMessage
+		if span.Result != "" {
+			status["message"] = span.Result
 		}
-		startNano := span.StartTimeUnixNano
-		if startNano <= 0 {
-			startNano = span.StartMs * int64(time.Millisecond)
-		}
-		endNano := span.EndTimeUnixNano
-		if endNano <= 0 {
-			endNano = span.EndMs * int64(time.Millisecond)
-		}
+		startNano := span.Start
+		endNano := span.End
 		if endNano <= 0 {
 			endNano = span.Time.UnixNano()
 		}
@@ -183,25 +177,10 @@ func (c *otlpConnection) buildPayload(spans []trace.Span) Map {
 
 func otlpDefaultFields() map[string]string {
 	return map[string]string{
-		"trace_id":             "bamgoo.trace_id",
-		"span_id":              "bamgoo.span_id",
-		"parent_span_id":       "bamgoo.parent_span_id",
-		"name":                 "bamgoo.name",
-		"kind":                 "bamgoo.kind",
-		"service_name":         "service.name",
-		"target":               "bamgoo.target",
-		"status":               "bamgoo.status",
-		"status_code":          "bamgoo.status_code",
-		"status_message":       "bamgoo.status_message",
-		"duration_ms":          "bamgoo.duration_ms",
-		"start_ms":             "bamgoo.start_ms",
-		"end_ms":               "bamgoo.end_ms",
-		"start_time_unix_nano": "bamgoo.start_time_unix_nano",
-		"end_time_unix_nano":   "bamgoo.end_time_unix_nano",
-		"timestamp":            "bamgoo.timestamp",
-		"project":              "bamgoo.project",
-		"profile":              "bamgoo.profile",
-		"node":                 "bamgoo.node",
+		"entry":   "bamgoo.entry",
+		"project": "bamgoo.project",
+		"profile": "bamgoo.profile",
+		"node":    "bamgoo.node",
 	}
 }
 
@@ -226,18 +205,27 @@ func kv(key string, value Any) Map {
 
 func kindCode(kind string) int {
 	switch strings.ToLower(strings.TrimSpace(kind)) {
-	case "internal":
+	case "internal", "method", "service", "trigger", "cron", "custom":
 		return 1
-	case "server":
+	case "server", "http", "web":
 		return 2
 	case "client":
 		return 3
 	case "producer":
 		return 4
-	case "consumer":
+	case "consumer", "event", "queue":
 		return 5
 	default:
 		return 1
+	}
+}
+
+func isInternalTraceAttr(key string) bool {
+	switch key {
+	case "kind", "service", "entry", "step", "status", "code", "result", "target":
+		return true
+	default:
+		return false
 	}
 }
 
