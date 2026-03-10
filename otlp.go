@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/infrago/infra"
 	. "github.com/infrago/base"
+	"github.com/infrago/infra"
 	"github.com/infrago/trace"
 )
 
@@ -179,6 +179,7 @@ func otlpDefaultFields() map[string]string {
 	return map[string]string{
 		"entry":   "infra.entry",
 		"project": "infra.project",
+		"role":    "infra.role",
 		"profile": "infra.profile",
 		"node":    "infra.node",
 	}
